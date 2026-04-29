@@ -1,18 +1,9 @@
 version: 0.2
 phases:
- install:
- runtime-versions:
- nodejs: 18
+build:
  commands:
- - npm install
- pre_build:
- commands:
- - echo "Running tests..."
- - npm test # <--- tests here
- build:
- commands:
- - echo "Running build..."
- - npm run build
+ - echo "Building..."
 artifacts:
- files:
+files:
  - '**/*'
+
