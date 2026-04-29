@@ -2,12 +2,20 @@ version: 0.2
 
 phases:
   install:
+    runtime-versions:
+      nodejs: 18
     commands:
-      - echo "No dependencies required"
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "Running tests..."
+      - npm test # <--- tests here
 
   build:
     commands:
-      - echo "Preparing website files..."
+      - echo "Running build..."
+      - npm run build
 
 artifacts:
   files:
