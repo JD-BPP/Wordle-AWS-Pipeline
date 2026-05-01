@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for a Web Server with Security Group,
+  Apache, and CodeDeploy Agent
+
+Parameters:
+  LatestAmiId:
+    Description: Latest Amazon Linux 2 AMI from SSM Parameter Store
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  InstanceType:
+    Description: Web server EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+  MyIP:
+    Description: Your IP address in CIDR format
+    Type: String
+    Default: 0.0.0.0/0
+
+Resources:
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref MyIP
+
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash
+        sudo yum update -y
+        sudo yum install -y httpd
+        sudo systemctl start httpd
+        sudo systemctl enable httpd
+        sudo yum install -y ruby wget
+        cd /home/ec2-user
+        wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+        chmod +x ./install
+        sudo ./install auto
+        sudo systemctl enable codedeploy-agent
+        sudo systemctl start codedeploy-agent
+        echo 'httpd and codedeploy installed!'
+      Tags:
+        - Key: Name
+          Value: DevOps-Wordle-WebServer
+
+Outputs:
+  WebsiteURL:
+    Description: Website URL
+    Value: !Join
+      - ''
+      - - http://
+        - !GetAtt WebServer.PublicDnsName
